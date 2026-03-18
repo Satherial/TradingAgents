@@ -1,0 +1,3 @@
+# Dipendenze specifiche per i test (quelle di produzione sono in requirements.txt)
+pytest>=7.0.0
+pytest-mock>=3.10.0
