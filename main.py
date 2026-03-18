@@ -34,7 +34,7 @@ LLM_DEEP = os.getenv("LLM_DEEP", "qwen3:14b")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 SCAN_RESULTS_FILE = "scan_etf_risultati.csv"
-PORTFOLIO_FILE = "portfolio.txt"
+PORTFOLIO_FILE = "portafolio.txt"
 STRATEGY_FILE = "strategia.txt"
 
 

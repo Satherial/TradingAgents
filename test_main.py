@@ -206,7 +206,7 @@ class TestLoadPortfolioAndStrategy(unittest.TestCase):
     @patch('builtins.open', mock_open(read_data="Portfolio test"))
     def test_loads_valid_portfolio(self, mock_validate, mock_exists):
         """Carica portfolio valido con strategia"""
-        mock_exists.side_effect = lambda x: x == PORTFOLIO_FILE or x == STRATEGY_FILE
+        mock_exists.side_effect = lambda x: x == "portafolio.txt" or x == STRATEGY_FILE
         mock_validate.return_value = (True, "Portfolio validato")
         
         with patch('builtins.open', mock_open(read_data="Strategia test")) as mock_file:
