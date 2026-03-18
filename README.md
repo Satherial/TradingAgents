@@ -234,6 +234,50 @@ The `main.py` script provides a complete automated trading workflow that combine
 - Context-aware recommendations (BUY/HOLD/AVOID)
 - Results saved to `decisione_finale.txt`
 
+### Economic Framework & Decision Logic
+
+**Investment Parameters:**
+- **Flexible Amount**: Investment amount specified in `strategia.txt` (e.g., €5,000)
+- **Risk Profile**: MODERATE default (balanced growth/income approach)
+- **Decision Types**: BUY / HOLD / AVOID with clear economic rationale
+
+**Core Economic Principles:**
+
+**1. Portfolio Optimization Theory**
+- **Diversification**: Avoids sector overlap (max 30% exposure per sector)
+- **Correlation Analysis**: Penalizes ETFs with >90% correlation to existing holdings
+- **Risk-Adjusted Returns**: Uses Sharpe ratio for risk-per-unit evaluation
+
+**2. Dividend Sustainability Framework**
+- **Yield Analysis**: Real 12-month dividend yield vs. advertised yield
+- **Consistency Scoring**: Payment reliability (minimum 50% consistency required)
+- **Payout Reasonableness**: Evaluates if dividend distributions are sustainable
+- **Growth Trend**: Analyzes dividend growth vs. shrinkage patterns
+
+**3. Market Timing & Trend Analysis**
+- **Momentum Evaluation**: 3-month momentum to identify current trends
+- **Drawdown Protection**: Maximum -25% drawdown threshold for risk control
+- **Performance Filter**: Minimum -5% total return requirement
+
+**4. Computational Economics**
+- **First-BUY Strategy**: Stops at first BUY recommendation to optimize LLM costs
+- **Sequential Analysis**: Processes candidates by composite score ranking
+- **Resource Efficiency**: Balances analysis depth vs. computational expense
+
+**Decision Logic Matrix:**
+```
+BUY = ✅ Portfolio fit + ✅ Sustainable dividend + ✅ Positive trend + ✅ Risk acceptable
+HOLD = ⚠️ Good fundamentals but ⚠️ Suboptimal timing/entry point
+AVOID = ❌ Poor fundamentals OR ❌ Excessive risk OR ❌ Portfolio overlap
+```
+
+**Investment Validation Criteria:**
+1. **Portfolio Coherence**: No sector duplication with existing holdings
+2. **Diversification Value**: Adds new geographic/sector exposure
+3. **Dividend Sustainability**: Reasonable payout ratio with stable history
+4. **Trend Quality**: Genuine uptrend vs. short-term noise
+5. **Unit Economics**: Maximum purchasable units based on strategy-specified amount
+
 ### Quick Start
 
 1. **Configure your portfolio:**
@@ -275,10 +319,75 @@ python main.py
 ### Workflow Process
 
 1. **Discovery:** Runs scanner to find dividend ETF candidates
-2. **Validation:** Checks portfolio.txt and strategia.txt with LLM validation
+2. **Validation:** Checks portafolio.txt and strategia.txt with LLM validation
 3. **Analysis:** Tests each ETF with full TradingAgents system
 4. **Selection:** Stops at first BUY recommendation
 5. **Output:** Saves detailed analysis and recommendation
+
+### Technical Implementation Flow
+
+**Step-by-Step Execution:**
+
+**Phase 1: Scanner Integration**
+```python
+# main.py automatically checks for scan_etf_risultati.csv
+if not exists:
+    subprocess.run(["python", "scanner.py"], timeout=600)  # 10 minutes max
+```
+
+**Phase 2: Portfolio Validation**
+```python
+# LLM-powered validation using quick model
+portfolio_content = validate_portfolio_with_llm(portfolio_raw)
+# Ensures file contains valid holdings or explicit "empty portfolio"
+```
+
+**Phase 3: TradingAgents Configuration**
+```python
+config = DEFAULT_CONFIG.copy()
+config["llm_provider"] = LLM_PROVIDER  # ollama/openai/anthropic
+config["deep_think_llm"] = LLM_DEEP      # qwen3:14b/gpt-5.2
+config["quick_think_llm"] = LLM_QUICK    # llama3.1:8b/gpt-5-mini
+config["max_debate_rounds"] = 2
+config["system_prompt_prefix"] = build_system_prompt(portfolio, strategy)
+```
+
+**Phase 4: Sequential Analysis Loop**
+```python
+for ticker in watchlist:  # Top 10 ETFs from scanner
+    _, decision = ta.propagate(ticker, date)
+    
+    if is_buy_recommendation(decision):
+        # Extract motivation and save comprehensive report
+        etf_details = get_etf_details(ticker, name)
+        save_decision_file(ticker, decision, etf_details)
+        break  # First-BUY optimization
+```
+
+**Phase 5: Decision Output Generation**
+- Extracts key motivation from LLM response
+- Fetches complete ETF data from yfinance
+- Calculates purchasable units with €5,000
+- Generates structured report in `decisione_finale.txt`
+
+**Key Technical Features:**
+- **Error Handling**: Continues to next candidate if analysis fails
+- **Timeout Protection**: 10-minute limit for scanner execution
+- **Progress Tracking**: Real-time output of analysis progress
+- **Data Validation**: Verifies ETF data availability before analysis
+- **Fallback Mechanisms**: Multiple ticker format attempts (.MI, base)
+
+**LLM Integration Pattern:**
+```python
+# System prompt construction
+prompt = f"""Sei un consulente finanziario esperto che deve raccomandare 
+UN SOLO investimento per un investitore italiano con profilo di rischio MODERATO.
+
+Portfolio attuale: {portfolio}
+Strategia: {strategy}
+Domande da valutare: [diversification, sustainability, trend, units based on strategy amount, recommendation]
+"""
+```
 
 ### Customization
 

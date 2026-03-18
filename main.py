@@ -309,10 +309,10 @@ def extract_motivation(decision: str) -> str:
 def build_system_prompt(portfolio: str, strategy: str) -> str:
     """Costruisce il system prompt per l'analisi"""
     
-    base_prompt = f"""Sei un consulente finanziario esperto che deve raccomandare UN SOLO investimento da 5.000€ per un investitore italiano con profilo di rischio MODERATO.
+    base_prompt = f"""Sei un consulente finanziario esperto che deve raccomandare UN SOLO investimento per un investitore italiano con profilo di rischio MODERATO.
 
 Stai aiutando un investitore italiano a decidere SE ACQUISTARE questo titolo.
-L'investitore NON possiede ancora questo titolo e ha 5.000€ da investire.
+L'investitore NON possiede ancora questo titolo.
 
 La raccomandazione finale deve essere UNA di queste tre:
 - BUY = ACQUISTA questo titolo (buon momento per nuovo investimento)
@@ -321,7 +321,7 @@ La raccomandazione finale deve essere UNA di queste tre:
 
 IMPORTANTE: Questo titolo NON è ancora nel portafoglio. Stai consigliando SE aggiungerlo.
 
-PORTFOLIO ATTUALE DELL'INVESTITORE:
+PORTAFOGLIO ATTUALE DELL'INVESTITORE:
 {portfolio}
 """
     
@@ -337,7 +337,7 @@ Per il titolo che stai analizzando, rispondi a:
 2. Aggiunge diversificazione reale?
 3. Il dividendo è sostenibile (payout ragionevole, storia stabile)?
 4. Il trend è davvero positivo o è rumore di breve periodo?
-5. Quante unità si possono comprare con 5.000€?
+5. Quante unità si possono comprare con l'importo disponibile indicato nella strategia?
 6. Raccomandazione finale: BUY / HOLD / AVOID — con motivazione chiara in italiano.
 
 Usa AVOID (o EVITA) quando il titolo NON va acquistato.
@@ -455,8 +455,8 @@ def main():
                             f.write(f"� Gestore: {etf_details['fund_family']}\n")
                         if etf_details.get('category', 'N/A') != 'N/A':
                             f.write(f"📂 Categoria: {etf_details['category']}\n")
-                        f.write(f"\n💡 Quante unità con 5.000€: {int(5000/etf_details['current_price'])} quote\n")
-                        f.write(f"💰 Valore investimento: €5.000\n")
+                        f.write(f"\n💡 Unità calcolate basate su importo dalla strategia: {int(5000/etf_details['current_price'])} quote (indicativo)\n")
+                        f.write(f"💰 Valore investimento: come indicato in strategia.txt\n")
                         f.write(f"🌍 Mercato: {etf_details['country']} ({etf_details['ticker']})\n")
                     
                     f.write(f"\n" + "=" * 60 + "\n")
@@ -471,7 +471,7 @@ def main():
                     f.write(f"Nome ETF: {etf_name}\n")
                     f.write(f"Raccomandazione: BUY (ACQUISTA ORA)\n")
                     f.write(f"Profilo rischio: MODERATO\n")
-                    f.write(f"Importo suggerito: 5.000€\n")
+                    f.write(f"Importo suggerito: come da strategia.txt\n")
                     f.write(f"Fonte dati: yfinance + TradingAgents analysis\n\n")
                     f.write("⚠️  NOTA: Questa è una raccomandazione generata da AI.\n")
                     f.write("      Fai sempre le tue verifiche prima di investire.\n")

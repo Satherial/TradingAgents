@@ -168,7 +168,7 @@ class TestBuildSystemPrompt(unittest.TestCase):
         prompt = build_system_prompt(portfolio, strategy)
         
         self.assertIn("AAPL: 100 quote", prompt)
-        self.assertIn("PORTFOLIO ATTUALE", prompt)
+        self.assertIn("PORTAFOGLIO ATTUALE DELL'INVESTITORE", prompt)
     
     def test_prompt_contains_strategy(self):
         """Il prompt contiene la strategia se fornita"""
