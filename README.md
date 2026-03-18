@@ -199,6 +199,76 @@ print(decision)
 
 See `tradingagents/default_config.py` for all configuration options.
 
+## ETF Scanner
+
+The `scanner.py` module provides a comprehensive ETF discovery and analysis tool specifically designed for income-focused dividend ETFs. This scanner exclusively targets the best dividend-paying ETFs while systematically ignoring all other investment vehicles.
+
+### Key Features
+
+**Dividend-Focused Discovery:**
+- Downloads complete ETF listings from justETF database
+- Filters exclusively for "Distributing" ETFs (dividend-paying)
+- Lists only ETFs quoted on Borsa Italiana with AUM ≥100M€
+- Excludes non-dividending ETFs, growth ETFs, and accumulation funds
+
+**Comprehensive Analysis Pipeline:**
+For each dividend ETF candidate, the system calculates:
+
+**Dividend Metrics:**
+- Real yield based on actual 12-month distributions
+- Net yield (yield minus TER costs)
+- Consistency score (payment reliability)
+- Dividend growth trend (growing vs shrinking distributions)
+
+**Financial Performance Metrics:**
+- Total Return 1 year (price + dividends)
+- Sharpe ratio (return per unit of risk)
+- Maximum drawdown (worst temporary loss)
+- 3-month momentum
+
+**Risk Management:**
+- Portfolio correlation analysis to avoid overlap
+- Hard exclusion filters for underperforming assets
+- AUM stability assessment
+
+**Selection Criteria:**
+ETFs are automatically excluded if they fail any of these conditions:
+- Total return < -5% (negative performance)
+- Maximum drawdown < -25% (excessive risk)
+- Correlation > 90% with existing portfolio
+- Consistency score < 50% (unreliable payments)
+- Net yield < 1% (insufficient dividends)
+
+**Composite Scoring System:**
+Only ETFs passing all filters receive a composite score weighted towards:
+- **Net Yield** (weight 2.5) - highest priority
+- **Total Return** (weight 1.5)
+- **Sharpe Ratio** (weight 2.0)
+- **Payment Consistency** (weight 1.0)
+- **Dividend Growth** (weight 1.0)
+- **Correlation Penalty** (weight 3.0) - avoids portfolio overlap
+
+### Usage
+
+```bash
+python scanner.py
+```
+
+The scanner outputs the top 15 dividend ETFs ranked by composite score, providing:
+- Ticker and name
+- Current price and yield metrics
+- Risk indicators (Sharpe, drawdown, correlation)
+- Performance data (total return, momentum)
+- Composite score for ranking
+
+Results are saved to `scan_etf_risultati.csv` and a watchlist is generated for integration with TradingAgents.
+
+### Dependencies
+
+```bash
+pip install justetf-scraping yfinance pandas numpy
+```
+
 ## Contributing
 
 We welcome contributions from the community! Whether it's fixing a bug, improving documentation, or suggesting a new feature, your input helps make this project better. If you are interested in this line of research, please consider joining our open-source financial AI research community [Tauric Research](https://tauric.ai/).
