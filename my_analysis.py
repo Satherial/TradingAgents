@@ -13,14 +13,14 @@ import json
 # -------------------------------------------------------
 WATCHLIST = []  # ← verrà popolata automaticamente da scan_risultati.csv
 
-# Se scan_risultati.csv esiste, carica la watchlist da lì
+# Se scan_etf_risultati.csv esiste, carica la watchlist da lì
 import os, pandas as pd
-if os.path.exists("scan_risultati.csv"):
-    df_scan = pd.read_csv("scan_risultati.csv", encoding="utf-8-sig", index_col=0)
+if os.path.exists("scan_etf_risultati.csv"):
+    df_scan = pd.read_csv("scan_etf_risultati.csv", encoding="utf-8-sig", index_col=0)
     # Escludi quelli con settore già saturo
-    df_scan = df_scan[~df_scan["Settore"].str.startswith("⚠️", na=False)]
+    # df_scan = df_scan[~df_scan["Settore"].str.startswith("⚠️", na=False)]
     WATCHLIST = df_scan.head(10)["Ticker"].tolist()
-    print(f"📂 Watchlist caricata da scan_risultati.csv: {WATCHLIST}\n")
+    print(f"📂 Watchlist caricata da scan_etf_risultati.csv: {WATCHLIST}\n")
 else:
     # Fallback manuale se lo scanner non è stato ancora eseguito
     WATCHLIST = ['BPSO.MI', 'IG.MI', 'VAPX.MI', 'SPM.MI', 'AZM.MI', 'BAMI.MI', 'BMED.MI', 'ISP.MI', 'UCG.MI', 'UNI.MI', 'TDIV.MI', 'SRG.MI', 'TEN.MI', 'VHYL.MI', 'IDVY.MI']
