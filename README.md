@@ -127,10 +127,21 @@ export GOOGLE_API_KEY=...          # Google (Gemini)
 export ANTHROPIC_API_KEY=...       # Anthropic (Claude)
 export XAI_API_KEY=...             # xAI (Grok)
 export OPENROUTER_API_KEY=...      # OpenRouter
-export ALPHA_VANTAGE_API_KEY=...   # Alpha Vantage
+export ALPHA_VANTAGE_API_KEY=...   # Alpha Vantage (optional)
+export FINNHUB_API_KEY=...         # Finnhub (optional)
 ```
 
-For local models, configure Ollama with `llm_provider: "ollama"` in your config.
+**For local models**, configure Ollama with environment variables:
+```bash
+export LLM_PROVIDER=ollama
+export LLM_QUICK=llama3.1:8b
+export LLM_DEEP=qwen3:14b
+export OLLAMA_HOST=http://localhost:11434
+```
+
+**Data Sources:**
+- **Default:** yfinance (free, no API key required)
+- **Optional:** Alpha Vantage or Finnhub for enhanced data
 
 Alternatively, copy `.env.example` to `.env` and fill in your keys:
 ```bash
@@ -198,6 +209,83 @@ print(decision)
 ```
 
 See `tradingagents/default_config.py` for all configuration options.
+
+## Automated Trading Flow
+
+The `main.py` script provides a complete automated trading workflow that combines ETF discovery with portfolio-aware analysis to find optimal investment opportunities.
+
+### Features
+
+**Smart Workflow Automation:**
+- Automatically runs `scanner.py` if results file is missing
+- Sequential analysis of top ETF candidates until first BUY recommendation
+- Portfolio-aware analysis using your existing holdings and investment strategy
+- Stops at first BUY to save time and computational resources
+
+**Portfolio Integration:**
+- `portafolio.txt` - List your current holdings and sector exposure
+- `strategia.txt` - Define your investment rules, risk profile, and objectives
+- LLM-powered portfolio validation ensures consistency
+- Avoids duplicate sector exposure and aligns with your strategy
+
+**Intelligent Analysis:**
+- Uses TradingAgents multi-agent system for each candidate
+- Bull/Bear debate rounds for balanced decision making
+- Context-aware recommendations (BUY/HOLD/AVOID)
+- Results saved to `decisione_finale.txt`
+
+### Quick Start
+
+1. **Configure your portfolio:**
+```bash
+# Copy and edit templates
+cp portfolio_example.txt portafolio.txt
+cp strategia_example.txt strategia.txt
+
+# Edit with your actual holdings and strategy
+```
+
+2. **Set up LLM configuration (.env):**
+```bash
+# For local models
+LLM_PROVIDER=ollama
+LLM_QUICK=llama3.1:8b
+LLM_DEEP=qwen3:14b
+OLLAMA_HOST=http://localhost:11434
+```
+
+3. **Run automated analysis:**
+```bash
+python main.py
+```
+
+### File Structure
+
+```
+├── main.py                    # Automated trading workflow
+├── scanner.py                 # ETF discovery and analysis
+├── portafolio.txt             # Your current holdings (create from template)
+├── strategia.txt              # Your investment strategy (create from template)
+├── portfolio_example.txt      # Portfolio template with examples
+├── strategia_example.txt      # Strategy template with examples
+├── scan_etf_risultati.csv     # Scanner output (auto-generated)
+└── decisione_finale.txt       # Final BUY recommendation (auto-generated)
+```
+
+### Workflow Process
+
+1. **Discovery:** Runs scanner to find dividend ETF candidates
+2. **Validation:** Checks portfolio.txt and strategia.txt with LLM validation
+3. **Analysis:** Tests each ETF with full TradingAgents system
+4. **Selection:** Stops at first BUY recommendation
+5. **Output:** Saves detailed analysis and recommendation
+
+### Customization
+
+- **Risk Profile:** Modify `strategia.txt` for conservative/aggressive approach
+- **Sector Preferences:** Define target sectors in portfolio analysis
+- **Investment Amount:** Change liquidità in strategia.txt
+- **LLM Models:** Configure quick/deep models in .env
 
 ## ETF Scanner
 
@@ -268,6 +356,26 @@ Results are saved to `scan_etf_risultati.csv` and a watchlist is generated for i
 ```bash
 pip install justetf-scraping yfinance pandas numpy
 ```
+
+## Testing
+
+The project includes comprehensive unit tests for core functionality:
+
+```bash
+# Run all tests
+python -m pytest -v
+
+# Run specific test files
+python test_main.py          # Test automated workflow (22 tests)
+python test_scanner.py       # Test ETF scanner (15 tests)
+```
+
+**Test Coverage:**
+- **main.py:** Scanner integration, portfolio validation, LLM communication
+- **scanner.py:** ETF discovery, ticker conversion, correlation analysis
+- **Mock-based:** Tests use mocks for external APIs and LLM calls
+
+Tests ensure reliability of the automated workflow and scanner components.
 
 ## Contributing
 
