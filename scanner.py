@@ -48,7 +48,7 @@ def get_etf_da_justetf() -> list[tuple[str, str, float]]:
     Restituisce lista di (isin, nome, aum) per ETF distributing
     quotati su Borsa Italiana con AUM sufficiente.
     """
-    print("📡 Scarico lista completa ETF da justETF...")
+    print("Scarico lista completa ETF da justETF...")
     print("   (solo distributing, quotati a Milano — può richiedere 30-60s)\n")
 
     try:
@@ -93,12 +93,12 @@ def get_etf_da_justetf() -> list[tuple[str, str, float]]:
             if ticker:  # Usa ticker invece di ISIN
                 risultato.append((ticker, nome, aum))
 
-        print(f"\n   ✅ {len(risultato)} ETF candidati trovati\n")
+        print(f"\n   {len(risultato)} ETF candidati trovati\n")
         return risultato
 
     except Exception as e:
-        print(f"   ❌ Errore justETF: {e}")
-        print("   ↩️  Uso lista fallback...\n")
+        print(f"   Errore justETF: {e}")
+        print("   Uso lista fallback...\n")
         return get_etf_fallback()
 
 
@@ -194,11 +194,11 @@ def get_portfolio_returns() -> dict[str, pd.Series]:
             if not storico.empty and len(storico) > 50:
                 returns = storico["Close"].pct_change().dropna()
                 portfolio_returns[ticker] = returns
-                print(f"   ✅ Caricato {ticker} ({name}): {len(returns)} giorni")
+                print(f"   Caricato {ticker} ({name}): {len(returns)} giorni")
             else:
-                print(f"   ⚠️  Dati insufficienti per {ticker}")
+                print(f"   Dati insufficienti per {ticker}")
         except Exception as e:
-            print(f"   ❌ Errore caricando {ticker}: {e}")
+            print(f"   Errore caricando {ticker}: {e}")
     
     return portfolio_returns
 
@@ -246,8 +246,28 @@ def analizza_etf(ticker: str, nome_noto: str, aum: float, portfolio_returns: dic
         if prezzo == 0:
             return None
 
+        # -------------------------------------------------------
+        # NUOVO: Validazione ISIN e Mercato
+        # -------------------------------------------------------
+        isin = info.get("isin", "")
+        exchange = info.get("exchange", "")
+        currency = info.get("currency", "USD")
+        market = "EU" if exchange in ["Borsa Italiana", "XETRA", "Euronext"] else "USA"
+        
+        # Avvisa se ETF è molto recente
+        inception_date = info.get("fundInceptionDate")
+        if inception_date:
+            try:
+                inception = pd.to_datetime(inception_date)
+                months_old = (pd.Timestamp.now(tz="UTC") - inception).days / 30
+                if months_old < 12:  # Meno di 1 anno
+                    print(f"   ETF molto recente ({months_old:.0f} mesi) - dati storici limitati")
+            except:
+                pass
+
         # Salta se troppo simile agli ETF già in portafoglio
         if is_etf_duplicato(nome):
+            print(f"   {ticker} ({nome}) troppo simile al portafoglio")
             return None
 
         # -------------------------------------------------------
@@ -382,6 +402,9 @@ def analizza_etf(ticker: str, nome_noto: str, aum: float, portfolio_returns: dic
         return {
             "Ticker":           ticker,
             "Nome":             nome,
+            "ISIN":             isin,
+            "Exchange":         exchange,
+            "Currency":         currency,
             "Prezzo €":         round(prezzo, 2),
             "Yield %":          yield_val,
             "Net Yield %":      round(net_yield, 2),
@@ -407,25 +430,26 @@ def analizza_etf(ticker: str, nome_noto: str, aum: float, portfolio_returns: dic
 # -------------------------------------------------------
 if __name__ == "__main__":
     print("=" * 65)
-    print("🌍  SCANNER ETF — DISCOVERY COMPLETA DA JUSTETF")
-    print(f"     Solo distributing | Borsa Italiana | AUM ≥{AUM_MIN//1e6:.0f}M€")
-    print(f"     Yield reale ≥{ETF_YIELD_MIN}% | Trend annuale positivo")
+    print("SCANNER ETF — DISCOVERY COMPLETA DA JUSTETF")
+    print(f"     Solo distributing | Borsa Italiana | AUM >= {AUM_MIN//1e6:.0f}M€")
+    print(f"     Yield reale >= {ETF_YIELD_MIN}% | Trend annuale positivo")
     print("=" * 65 + "\n")
 
     # Step 1: discovery completa da justETF
     etf_list = get_etf_da_justetf()
 
     if not etf_list:
-        print("❌ Nessun ETF trovato da justETF.")
+        print(" Nessun ETF trovato da justETF.")
+        print(" Nessun ETF trovato da justETF.")
         exit()
 
     # Step 1.5: carica dati del portafoglio esistente per correlazione
-    print("📊 Carico dati del portafoglio esistente...")
+    print(" Carico dati del portafoglio esistente...")
     portfolio_returns = get_portfolio_returns()
-    print(f"   ✅ Caricati {len(portfolio_returns)} ETF del portafoglio\n")
+    print(f"   Caricati {len(portfolio_returns)} ETF del portafoglio\n")
 
     # Step 2: converti ticker justETF → ticker Yahoo e analizza
-    print(f"🔍 Ricerco ticker Yahoo e analizzo {len(etf_list)} ETF...\n")
+    print(f" Ricerco ticker Yahoo e analizzo {len(etf_list)} ETF...\n")
     risultati = []
 
     for i, (ticker, nome_noto, aum) in enumerate(etf_list, 1):
@@ -433,18 +457,18 @@ if __name__ == "__main__":
 
         yahoo_ticker = ticker_to_yahoo_ticker(ticker)
         if not yahoo_ticker:
-            print("⏭️  ticker Yahoo non trovato")
+            print("X  ticker Yahoo non trovato")
             continue
 
         r = analizza_etf(yahoo_ticker, nome_noto, aum, portfolio_returns)
         if r:
             risultati.append(r)
-            print(f"✅  {ticker}  net_yield:{r['Net Yield %']}%  score:{r['Score']}")
+            print(f"OK  {ticker}  net_yield:{r['Net Yield %']}%  score:{r['Score']}")
         else:
-            print(f"⏭️  {ticker} escluso")
+            print(f"X  {ticker} escluso")
 
     if not risultati:
-        print("\n❌ Nessun ETF ha superato i filtri.")
+        print("\nNessun ETF ha superato i filtri.")
         exit()
 
     df = (pd.DataFrame(risultati)
@@ -453,15 +477,15 @@ if __name__ == "__main__":
     df.index += 1
 
     print("\n\n" + "=" * 65)
-    print(f"🏆  TOP {TOP_N} ETF DISTRIBUTING — MIGLIORI PER IL TUO PORTAFOGLIO")
+    print(f"TOP {TOP_N} ETF DISTRIBUTING — MIGLIORI PER IL TUO PORTAFOGLIO")
     print("=" * 65)
-    cols = ["Ticker","Nome","Prezzo €","Yield %","Net Yield %","Total Return 1y %",
+    cols = ["Ticker","Nome","ISIN","Exchange","Currency","Prezzo €","Yield %","Net Yield %","Total Return 1y %",
             "Sharpe","Max Drawdown %","Momentum 3m %","Consistency","Div Growth %",
             "Max Correlation","AUM","TER %","Score"]
     print(df.head(TOP_N)[cols].to_string())
 
     df.to_csv("scan_etf_risultati.csv", encoding="utf-8-sig", index=True)
-    print(f"\n💾 Salvato in: scan_etf_risultati.csv")
+    print(f"\nSalvato in: scan_etf_risultati.csv")
     watchlist = df.head(TOP_N)["Ticker"].tolist()
-    print(f"\n📋 WATCHLIST ETF PER TRADINGAGENTS:")
+    print(f"\nWATCHLIST ETF PER TRADINGAGENTS:")
     print(f"WATCHLIST = {watchlist}")
