@@ -218,6 +218,7 @@ def main():
     try:
         df_scan = pd.read_csv(SCAN_RESULTS_FILE, encoding="utf-8-sig", index_col=0)
         watchlist = df_scan.head(10)["Ticker"].tolist()
+        etf_names = df_scan.head(10).set_index("Ticker")["Nome"].to_dict()
         print(f"📊 Watchlist caricata: {len(watchlist)} titoli")
         print(f"   Primi 5: {watchlist[:5]}")
     except Exception as e:
@@ -257,7 +258,8 @@ def main():
     print("=" * 60)
     
     for i, ticker in enumerate(watchlist, 1):
-        print(f"\n[{i}/{len(watchlist)}] 🔍 Analisi {ticker}...")
+        etf_name = etf_names.get(ticker, ticker)
+        print(f"\n[{i}/{len(watchlist)}] 🔍 Analisi {ticker} - {etf_name}...")
         print("-" * 40)
         
         try:
@@ -272,14 +274,34 @@ def main():
                 print("=" * 60)
                 print(f"\n✅ Raccomandazione finale: ACQUISTA {ticker}")
                 
-                # Salva risultato
+                # Salva risultato completo
                 with open("decisione_finale.txt", "w", encoding="utf-8") as f:
                     f.write(f"DECISIONE FINALE - {oggi}\n")
                     f.write("=" * 60 + "\n\n")
-                    f.write(f"Ticker: {ticker}\n")
-                    f.write(f"Raccomandazione: BUY\n\n")
-                    f.write("Analisi completa:\n")
+                    f.write(f"🎯 TITOLARE SELEZIONATO: {ticker} - {etf_name}\n")
+                    f.write(f"📊 RACCOMANDAZIONE: BUY (ACQUISTA)\n\n")
+                    f.write("=" * 60 + "\n")
+                    f.write("📋 RIEPILOGO DECISIONE\n")
+                    f.write("=" * 60 + "\n\n")
+                    f.write("✅ Motivazione principale: Buon momento per acquistare\n")
+                    f.write("✅ Analisi completa del TradingAgents multi-agent system\n")
+                    f.write("✅ Valutazione basata su portafoglio e strategia personalizzati\n\n")
+                    f.write("=" * 60 + "\n")
+                    f.write("🔍 ANALISI DETTAGLIATA\n")
+                    f.write("=" * 60 + "\n\n")
                     f.write(decision)
+                    f.write(f"\n\n" + "=" * 60 + "\n")
+                    f.write("📊 INFORMAZIONI AGGIUNTIVE\n")
+                    f.write("=" * 60 + "\n\n")
+                    f.write(f"Data analisi: {oggi}\n")
+                    f.write(f"Ticker: {ticker}\n")
+                    f.write(f"Nome ETF: {etf_name}\n")
+                    f.write(f"Raccomandazione: BUY (ACQUISTA ORA)\n")
+                    f.write(f"Profilo rischio: MODERATO\n")
+                    f.write(f"Importo suggerito: 5.000€\n")
+                    f.write(f"Fonte dati: yfinance + TradingAgents analysis\n\n")
+                    f.write("⚠️  NOTA: Questa è una raccomandazione generata da AI.\n")
+                    f.write("      Fai sempre le tue verifiche prima di investire.\n")
                 
                 print(f"\n💾 Decisione salvata in: decisione_finale.txt")
                 return  # Termina al primo BUY
