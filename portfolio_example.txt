@@ -1,0 +1,31 @@
+# Portfolio Example
+# Crea un file "portfolio.txt" con i tuoi titoli reali o indica "portfolio vuoto"
+
+# ESEMPIO 1: Portfolio con titoli
+# Elenca i ticker posseduti con quantità e valore approssimativo
+
+PORTFOLIO ATTUALE:
+- EXSA.MI: 150 quote (~4.500€) - iShares STOXX Euro 600
+- IMEU.MI: 200 quote (~5.200€) - iShares Core MSCI EU
+- XDWD.MI: 100 quote (~3.800€) - Xtrackers Portfolio Income
+- XDEB.MI: 80 quote (~2.900€) - Xtrackers Portfolio
+
+TOTALE: ~16.400€
+
+SETTORI RAPPRESENTATI:
+- Euro Large Cap (EXSA.MI, XDWD.MI)
+- Euro Mid/Small Cap (IMEU.MI)  
+- Euro Bonds (XDEB.MI)
+
+OBIETTIVO: Diversificare con un nuovo ETF azionario che non duplichi 
+queste esposizioni, preferibilmente con dividend yield > 3%.
+
+---
+
+# ESEMPIO 2: Portfolio vuoto
+# Se non possiedi alcun titolo, scrivi esplicitamente:
+
+# PORTFOLIO ATTUALE: VUOTO
+# Sto iniziando a investire, ho 5.000€ da allocare.
+# Cerco un primo ETF distributore come base del portafoglio.
+# Preferisco esposizione diversificata internazionale con dividend yield.

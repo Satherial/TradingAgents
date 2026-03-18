@@ -1,0 +1,49 @@
+# Strategia di Investimento - Example
+# Crea un file "strategia.txt" con la tua strategia personale
+
+# ESEMPIO 1: Investitore Moderato con focus Dividendi
+
+PROFILO RISCHIO: MODERATO
+ORIZZONTE TEMPORALE: 5-10 anni
+
+STRATEGIA:
+- Core portfolio: ETF diversificati azionari (60-70%)
+- Income component: ETF high dividend (20-30%)
+- Stabilizzatore: ETF obbligazionari breve/medio termine (10-20%)
+
+CRITERI SELEZIONE ETF:
+1. AUM > 100M€ (liquidità sufficiente)
+2. TER < 0.5% (costi contenuti)
+3. Dividend Yield 2-6% (sostenibile nel tempo)
+4. Distribuzione trimestrale o mensiale preferibile
+5. Esclusione settori/specifiche già coperte
+
+REINVESTIMENTO:
+- Dividendi: distribuzione cash per flessibilità
+- Rebalancing: annuale o su variazione >10% dell'allocazione
+
+---
+
+# ESEMPIO 2: Investitore Aggressivo Growth
+
+PROFILO RISCHIO: AGGRESSIVO
+ORIZZONTE TEMPORALE: 10+ anni
+
+STRATEGIA:
+- 100% azionario, nessuna allocazione obbligazionaria
+- Focus su emerging markets e small-cap
+- Accetto volatilità elevata per potenziale crescita superiore
+
+CRITERI:
+1. Esposizione geografica diversificata
+2. Settori growth (tech, healthcare, clean energy)
+3. Low dividend yield accettabile (focus capital gain)
+4. AUM > 50M€
+
+---
+
+# ESEMPIO 3: Strategia Minima/Vuota
+# Se non hai una strategia definita, puoi lasciare questo file vuoto
+# o scrivere semplicemente:
+
+# STRATEGIA: Da definire. Cerco consiglio sull'allocazione ottimale.
