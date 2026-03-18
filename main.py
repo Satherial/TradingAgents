@@ -166,10 +166,12 @@ def build_system_prompt(portfolio: str, strategy: str) -> str:
 Stai aiutando un investitore italiano a decidere SE ACQUISTARE questo titolo.
 L'investitore NON possiede ancora questo titolo e ha 5.000€ da investire.
 
-La raccomandazione deve essere interpretata come:
-- BUY = buon momento per acquistare adesso
-- HOLD = aspetta un momento migliore per acquistare  
-- SELL = non acquistare, condizioni sfavorevoli
+La raccomandazione finale deve essere UNA di queste tre:
+- BUY = ACQUISTA questo titolo (buon momento per nuovo investimento)
+- HOLD = NON ACQUISTARE ORA (aspetta momento migliore, titolo interessante ma non ora)
+- AVOID/EVITA = NON ACQUISTARE (condizioni sfavorevoli, evitare questo titolo)
+
+IMPORTANTE: Questo titolo NON è ancora nel portafoglio. Stai consigliando SE aggiungerlo.
 
 PORTFOLIO ATTUALE DELL'INVESTITORE:
 {portfolio}
@@ -188,9 +190,9 @@ Per il titolo che stai analizzando, rispondi a:
 3. Il dividendo è sostenibile (payout ragionevole, storia stabile)?
 4. Il trend è davvero positivo o è rumore di breve periodo?
 5. Quante unità si possono comprare con 5.000€?
-6. BUY / HOLD / SELL — con motivazione chiara in italiano.
+6. Raccomandazione finale: BUY / HOLD / AVOID — con motivazione chiara in italiano.
 
-Fornisci una raccomandazione finale chiara: BUY, HOLD, o SELL.
+Usa AVOID (o EVITA) quando il titolo NON va acquistato.
 """
     
     return base_prompt

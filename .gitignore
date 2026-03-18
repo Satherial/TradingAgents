@@ -229,3 +229,7 @@ scan_etf_risultati.csv
 # Decision output
 decisione_finale.txt
 report_investimento.txt
+
+# Evaluation logs
+eval_results/
+results/
