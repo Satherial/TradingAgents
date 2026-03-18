@@ -18,6 +18,7 @@ import subprocess
 import pandas as pd
 import requests
 import json
+import yfinance as yf
 from datetime import date
 from dotenv import load_dotenv
 
@@ -158,6 +159,153 @@ def load_portfolio_and_strategy() -> tuple[str, str]:
     return portfolio_content, strategy_content
 
 
+def get_etf_details(ticker: str, name: str) -> dict:
+    """
+    Ottiene dati completi dell'ETF da yfinance
+    """
+    try:
+        # Prova diversi formati ticker
+        ticker_variants = [ticker]
+        if not ticker.endswith('.MI'):
+            ticker_variants.append(f"{ticker}.MI")
+        
+        etf_data = None
+        working_ticker = ticker
+        
+        for variant in ticker_variants:
+            try:
+                etf = yf.Ticker(variant)
+                info = etf.info
+                history = etf.history(period="1y")
+                
+                if not history.empty and info.get('regularMarketPrice'):
+                    etf_data = (etf, info, history)
+                    working_ticker = variant
+                    break
+            except:
+                continue
+        
+        if not etf_data:
+            return {"error": "ETF non trovato o dati non disponibili"}
+        
+        etf, info, history = etf_data
+        
+        current_price = history['Close'].iloc[-1]
+        dividend_yield = info.get('dividendYield', 0) * 100 if info.get('dividendYield') else 0
+        total_assets = info.get('totalAssets', 0)
+        expense_ratio = info.get('annualReportExpenseRatio', 0) * 100 if info.get('annualReportExpenseRatio') else 0
+        
+        # Nome completo da yfinance, fallback su quello dallo scanner
+        full_name = info.get('longName') or info.get('shortName') or name
+        
+        # Calcolo performance
+        year_ago_price = history['Close'].iloc[-252] if len(history) > 252 else history['Close'].iloc[0]
+        total_return = ((current_price - year_ago_price) / year_ago_price) * 100
+        
+        # Dividendi reali se disponibili
+        dividends = etf.dividends
+        real_yield = 0
+        if not dividends.empty:
+            one_year_ago = pd.Timestamp.now(tz="UTC") - pd.DateOffset(years=1)
+            recent_dividends = dividends[dividends.index >= one_year_ago]
+            if not recent_dividends.empty:
+                real_yield = (recent_dividends.sum() / current_price) * 100
+        
+        return {
+            "ticker": working_ticker,
+            "name": full_name,
+            "current_price": round(current_price, 2),
+            "dividend_yield": round(real_yield, 2) if real_yield > 0 else round(dividend_yield, 2),
+            "total_assets": f"${total_assets/1e9:.1f}B" if total_assets > 0 else "N/A",
+            "expense_ratio": round(expense_ratio, 2),
+            "total_return_1y": round(total_return, 2),
+            "52w_high": info.get('fiftyTwoWeekHigh', 'N/A'),
+            "52w_low": info.get('fiftyTwoWeekLow', 'N/A'),
+            "volume": info.get('averageVolume', 'N/A'),
+            "sector": info.get('sector', 'ETF'),
+            "country": info.get('country', 'USA'),
+            "currency": info.get('currency', 'USD'),
+            "fund_family": info.get('fundFamily', 'N/A'),
+            "category": info.get('category', 'N/A')
+        }
+    except Exception as e:
+        return {"error": f"Errore ottenendo dati: {e}"}
+
+
+def extract_motivation(decision: str) -> str:
+    """
+    Estrae la motivazione principale dalla decisione LLM in italiano
+    """
+    import re
+    
+    # Pattern più specifici per motivazioni in italiano
+    patterns = [
+        r"Motivazione[:\s]*([^\n]+)",
+        r"Perché[:\s]*([^\n]+)", 
+        r"Ragioni[:\s]*([^\n]+)",
+        r"Consiglio di[:\s]*([^\n]+)",
+        r"Raccomandazione[:\s]*([^\n]+)",
+        r"Giustificazione[:\s]*([^\n]+)",
+        r"Analisi[:\s]*([^\n]+)"
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, decision, re.IGNORECASE)
+        if match:
+            motivation = match.group(1).strip()
+            # Rimuovi "BUY" se all'inizio
+            if motivation.upper().startswith("BUY"):
+                motivation = motivation[3:].strip()
+            return motivation
+    
+    # Cerca frasi che contengono motivazioni per BUY
+    buy_patterns = [
+        r"BUY[^\n]*?([^.!?]*?[.!?])",
+        r"ACQUIST[^\n]*?([^.!?]*?[.!?])",
+        r"CONSIGLIO[^\n]*?([^.!?]*?[.!?])",
+        r"OPPORTUNITÀ[^\n]*?([^.!?]*?[.!?])"
+    ]
+    
+    for pattern in buy_patterns:
+        matches = re.findall(pattern, decision, re.IGNORECASE | re.MULTILINE)
+        for match in matches:
+            motivation = match.strip()
+            if len(motivation) > 20 and any(word in motivation.upper() for word in ['PERCHÉ', 'MOTIVO', 'RAGIONE', 'DATO', 'SICUREZZA', 'RENDIMENTO', 'DIVIDENDO']):
+                return motivation
+    
+    # Cerca frasi con parole chiave positive
+    positive_patterns = [
+        r"([^.!?]*buon[^\s]*[^.!?]*[.!?])",
+        r"([^.!?]*opportunità[^.!?]*[.!?])",
+        r"([^.!?]*favorevole[^.!?]*[.!?])",
+        r"([^.!?]*positivo[^.!?]*[.!?])"
+    ]
+    
+    for pattern in positive_patterns:
+        matches = re.findall(pattern, decision, re.IGNORECASE | re.MULTILINE)
+        for match in matches:
+            if len(match.strip()) > 25:
+                return match.strip()
+    
+    # Fallback: cerca la frase più lunga che contenga BUY
+    lines = decision.split('\n')
+    for line in lines:
+        if 'BUY' in line.upper() and len(line.strip()) > 30:
+            # Estrai la parte dopo BUY
+            parts = line.split('BUY')
+            if len(parts) > 1:
+                motivation = parts[1].strip()
+                if motivation and len(motivation) > 10:
+                    return motivation
+    
+    # Ultimo fallback: prima frase significativa
+    sentences = [s.strip() for s in decision.split('.') if len(s.strip()) > 30]
+    if sentences:
+        return sentences[0]
+    
+    return "Analisi completa indica opportunità di investimento con buon potenziale"
+
+
 def build_system_prompt(portfolio: str, strategy: str) -> str:
     """Costruisce il system prompt per l'analisi"""
     
@@ -275,19 +423,44 @@ def main():
                 print(f"\n✅ Raccomandazione finale: ACQUISTA {ticker}")
                 
                 # Salva risultato completo
+                etf_details = get_etf_details(ticker, etf_name)
+                motivation = extract_motivation(decision)
+                
                 with open("decisione_finale.txt", "w", encoding="utf-8") as f:
                     f.write(f"DECISIONE FINALE - {oggi}\n")
                     f.write("=" * 60 + "\n\n")
                     f.write(f"🎯 TITOLARE SELEZIONATO: {ticker} - {etf_name}\n")
-                    f.write(f"📊 RACCOMANDAZIONE: BUY (ACQUISTA)\n\n")
+                    f.write(f"📊 RACCOMANDAZIONE: BUY (ACQUISTA ORA)\n\n")
                     f.write("=" * 60 + "\n")
                     f.write("📋 RIEPILOGO DECISIONE\n")
                     f.write("=" * 60 + "\n\n")
-                    f.write("✅ Motivazione principale: Buon momento per acquistare\n")
+                    f.write(f"✅ MOTIVAZIONE PRINCIPALE:\n{motivation}\n\n")
                     f.write("✅ Analisi completa del TradingAgents multi-agent system\n")
                     f.write("✅ Valutazione basata su portafoglio e strategia personalizzati\n\n")
                     f.write("=" * 60 + "\n")
-                    f.write("🔍 ANALISI DETTAGLIATA\n")
+                    f.write("💰 DATI COMPLETI ETF\n")
+                    f.write("=" * 60 + "\n\n")
+                    
+                    if "error" in etf_details:
+                        f.write(f"⚠️  Errore dati: {etf_details['error']}\n\n")
+                    else:
+                        f.write(f"📈 Prezzo attuale: ${etf_details['current_price']} {etf_details.get('currency', 'USD')}\n")
+                        f.write(f"💰 Dividend Yield: {etf_details['dividend_yield']}%\n")
+                        f.write(f"🏦 Patrimonio gestito: {etf_details['total_assets']}\n")
+                        f.write(f"💸 Costo gestione (TER): {etf_details['expense_ratio']}%\n")
+                        f.write(f"📊 Performance 1 anno: {etf_details['total_return_1y']}%\n")
+                        f.write(f"📈 Range 52 settimane: ${etf_details['52w_low']} - ${etf_details['52w_high']}\n")
+                        f.write(f"📊 Volume medio: {etf_details['volume']:,}\n")
+                        if etf_details.get('fund_family', 'N/A') != 'N/A':
+                            f.write(f"� Gestore: {etf_details['fund_family']}\n")
+                        if etf_details.get('category', 'N/A') != 'N/A':
+                            f.write(f"📂 Categoria: {etf_details['category']}\n")
+                        f.write(f"\n💡 Quante unità con 5.000€: {int(5000/etf_details['current_price'])} quote\n")
+                        f.write(f"💰 Valore investimento: €5.000\n")
+                        f.write(f"🌍 Mercato: {etf_details['country']} ({etf_details['ticker']})\n")
+                    
+                    f.write(f"\n" + "=" * 60 + "\n")
+                    f.write("�🔍 ANALISI DETTAGLIATA TRADINGAGENTS\n")
                     f.write("=" * 60 + "\n\n")
                     f.write(decision)
                     f.write(f"\n\n" + "=" * 60 + "\n")
@@ -302,6 +475,7 @@ def main():
                     f.write(f"Fonte dati: yfinance + TradingAgents analysis\n\n")
                     f.write("⚠️  NOTA: Questa è una raccomandazione generata da AI.\n")
                     f.write("      Fai sempre le tue verifiche prima di investire.\n")
+                    f.write("      I dati degli ETF sono aggiornati al momento dell'analisi.\n")
                 
                 print(f"\n💾 Decisione salvata in: decisione_finale.txt")
                 return  # Termina al primo BUY

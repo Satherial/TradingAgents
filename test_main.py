@@ -193,9 +193,9 @@ class TestBuildSystemPrompt(unittest.TestCase):
         """Il prompt definisce BUY/HOLD/SELL"""
         prompt = build_system_prompt("portfolio", "strategy")
         
-        self.assertIn("BUY = buon momento", prompt)
-        self.assertIn("HOLD = aspetta", prompt)
-        self.assertIn("SELL = non acquistare", prompt)
+        self.assertIn("BUY = ACQUISTA questo titolo", prompt)
+        self.assertIn("HOLD = NON ACQUISTARE ORA", prompt)
+        self.assertIn("AVOID/EVITA = NON ACQUISTARE", prompt)
 
 
 class TestLoadPortfolioAndStrategy(unittest.TestCase):
