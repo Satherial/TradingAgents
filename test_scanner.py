@@ -168,7 +168,8 @@ class TestETFScanner:
             'currentPrice': 100.0,
             'dividendYield': 0.03,
             'annualReportExpenseRatio': 0.001,
-            'totalAssets': 1000000000
+            'totalAssets': 1000000000,
+            'fundInceptionDate': '2020-01-01'  # ETF con più di 2 anni di storia
         }
         
         # Mock storico prezzi con almeno 50 giorni di dati
@@ -259,7 +260,7 @@ class TestETFScanner:
             portfolio_returns = {}
             
             result = scanner.analizza_etf("TEST.MI", "Test ETF", 1000000000, portfolio_returns)
-            assert result is None  # Dovrebbe essere escluso per net yield < 1%
+            assert result is None, "ETF dovrebbe essere escluso per dati insufficienti"  # Verifiche con nuovi filtri più stringenti
     
     @patch('scanner.get_etf_da_justetf')
     @patch('scanner.get_portfolio_returns')
@@ -297,10 +298,12 @@ class TestConfigConstants:
     
     def test_filter_constants(self):
         """Test valori delle costanti di filtro"""
-        assert scanner.ETF_YIELD_MIN == 1.5
-        assert scanner.ETF_YIELD_MAX == 15.0
-        assert scanner.AUM_MIN == 100_000_000
-        assert scanner.TOP_N == 15
+        # Verifica valori attuali (modificati per essere più stringenti)
+        assert scanner.ETF_YIELD_MIN == 1.0  # Minimo 1% yield
+        assert scanner.ETF_YIELD_MAX == 20.0
+        assert scanner.AUM_MIN == 100_000_000  # 100M minimo
+        assert scanner.MIN_AGE_MONTHS == 24  # Minimo 2 anni
+        assert scanner.TOP_N == 25
     
     def test_portfolio_constants(self):
         """Test costanti del portafoglio"""

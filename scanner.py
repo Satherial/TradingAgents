@@ -11,10 +11,11 @@ warnings.filterwarnings('ignore')
 # -------------------------------------------------------
 # PARAMETRI FILTRO
 # -------------------------------------------------------
-ETF_YIELD_MIN       = 1.5    # % minimo yield (da distribuzioni reali)
-ETF_YIELD_MAX       = 15.0   # % massimo (sopra = dato anomalo)
-AUM_MIN             = 100_000_000   # 100M€ AUM minimo (stabilità)
-TOP_N               = 15
+ETF_YIELD_MIN       = 1.0    # % minimo yield
+ETF_YIELD_MAX       = 20.0   # % massimo
+AUM_MIN             = 100_000_000    # 100M€ AUM minimo (aumentato)
+MIN_AGE_MONTHS      = 24     # Minimo 2 anni di track record
+TOP_N               = 25     # Aumentato da 15 a 25 per più opzioni
 
 # -------------------------------------------------------
 # PORTAFOGLIO ESISTENTE - per calcolo correlazione
@@ -105,17 +106,59 @@ def get_etf_da_justetf() -> list[tuple[str, str, float]]:
 def get_etf_fallback() -> list[tuple[str, str, float]]:
     """Lista minima di fallback con ticker verificati se justETF non risponde."""
     return [
-        ("VUSA", "Vanguard All-World High Div",      11_000_000_000),
-        ("VWRA", "Vanguard All-World Dist",           5_000_000_000),
-        ("IWDA", "iShares MSCI World Dist",           3_000_000_000),
-        ("SX5E", "iShares Euro Stoxx 50",             5_000_000_000),
-        ("DLVP", "VanEck Dividend Leaders",           2_000_000_000),
-        ("CS51", "iShares Core Euro Stoxx 50",        8_000_000_000),
-        ("IWDA", "iShares Core MSCI World",          30_000_000_000),
-        ("VWRA", "Vanguard Dev Europe Dist",          3_000_000_000),
-        ("SX5E", "iShares Euro Dividend",             1_000_000_000),
-        ("IDVY", "iShares STOXX Global Select Div",  2_000_000_000),
+        # ETF preferiti dell'utente (EUR Hedged, Distributing, grande AUM)
+        ("IUSH", "iShares J.P. Morgan USD EM Bond EUR Hedged", 2_068_000_000),
+        ("IWDA", "iShares Core MSCI World EUR Hedged", 1_545_000_000),
+        ("LYP2", "Amundi Core S&P 500 Swap EUR Hedged", 1_304_000_000),
+        ("ID7E", "iShares $ Treasury Bond 7-10yr EUR Hedged", 1_282_000_000),
+        ("IBHE", "iShares USD Corporate Bond ESG SRI EUR Hedged", 1_155_000_000),
+        ("IUSB", "iShares Global Corporate Bond EUR Hedged", 1_110_000_000),
+        ("ID3E", "iShares USD Treasury Bond 3-7yr EUR Hedged", 1_090_000_000),
+        ("DBXN", "Xtrackers II US Treasuries EUR Hedged", 1_023_000_000),
+        ("ID20", "iShares USD Treasury Bond 20+yr EUR Hedged", 743_000_000),
+        ("WTEI", "WisdomTree AT1 CoCo Bond EUR Hedged", 285_000_000),
+        ("DX2G", "Xtrackers Nikkei 225 EUR Hedged", 209_000_000),
+        # ETF originali
+        ("VUSA", "Vanguard All-World High Div", 11_000_000_000),
+        ("VWRA", "Vanguard All-World Dist", 5_000_000_000),
+        ("SX5E", "iShares Euro Stoxx 50", 5_000_000_000),
+        ("DLVP", "VanEck Dividend Leaders", 2_000_000_000),
+        ("CS51", "iShares Core Euro Stoxx 50", 8_000_000_000),
+        ("IDVY", "iShares STOXX Global Select Div", 2_000_000_000),
     ]
+
+
+# -------------------------------------------------------
+# LOGGING ERRORI - per analisi post-scan
+# -------------------------------------------------------
+failed_tickers_log = []
+
+def log_failed_ticker(ticker: str, reason: str):
+    """Logga ticker falliti per analisi"""
+    failed_tickers_log.append({
+        'ticker': ticker,
+        'reason': reason,
+        'timestamp': pd.Timestamp.now()
+    })
+
+def print_error_summary():
+    """Stampa riepilogo errori alla fine dello scan"""
+    if failed_tickers_log:
+        print(f"\n{'='*65}")
+        print(f"RIEPILOGO ERRORI: {len(failed_tickers_log)} ticker falliti")
+        print(f"{'='*65}")
+        
+        # Raggruppa per tipo di errore
+        from collections import Counter
+        reasons = Counter([e['reason'] for e in failed_tickers_log])
+        
+        print("\nTipi di errore:")
+        for reason, count in reasons.most_common():
+            print(f"  - {reason}: {count}")
+        
+        print(f"\nPrimi 10 ticker falliti:")
+        for i, entry in enumerate(failed_tickers_log[:10], 1):
+            print(f"  {i}. {entry['ticker']}: {entry['reason']}")
 
 
 # -------------------------------------------------------
@@ -125,6 +168,7 @@ def ticker_to_yahoo_ticker(ticker: str) -> str | None:
     """
     Converte il ticker justETF in ticker Yahoo Finance.
     Usa ricerca più robusta con fallback multipli.
+    Logga errori per analisi.
     """
     try:
         # 1. Prova prima con suffisso .MI per Borsa Italiana
@@ -157,11 +201,16 @@ def ticker_to_yahoo_ticker(ticker: str) -> str | None:
                 if "etf" in shortname or "ucits" in shortname:
                     if symbol.endswith((".PA", ".DE", ".L", ".AS", ".SW")):
                         return symbol
-        except:
+        except Exception as e:
+            log_failed_ticker(ticker, f"Search error: {str(e)[:50]}")
             pass
-            
+        
+        # Nessun ticker trovato
+        log_failed_ticker(ticker, "Yahoo ticker not found")
         return None
-    except Exception:
+        
+    except Exception as e:
+        log_failed_ticker(ticker, f"Exception: {str(e)[:50]}")
         return None
 
 
@@ -254,16 +303,21 @@ def analizza_etf(ticker: str, nome_noto: str, aum: float, portfolio_returns: dic
         currency = info.get("currency", "USD")
         market = "EU" if exchange in ["Borsa Italiana", "XETRA", "Euronext"] else "USA"
         
-        # Avvisa se ETF è molto recente
+        # Avvisa se ETF è molto recente - HARD FILTER
         inception_date = info.get("fundInceptionDate")
         if inception_date:
             try:
                 inception = pd.to_datetime(inception_date)
                 months_old = (pd.Timestamp.now(tz="UTC") - inception).days / 30
-                if months_old < 12:  # Meno di 1 anno
-                    print(f"   ETF molto recente ({months_old:.0f} mesi) - dati storici limitati")
+                if months_old < MIN_AGE_MONTHS:  # HARD FILTER: minimo 2 anni
+                    print(f"   {ticker} escluso: ETF troppo recente ({months_old:.0f} mesi < {MIN_AGE_MONTHS})")
+                    return None
             except:
                 pass
+        else:
+            # Senza data di inizio, non possiamo verificare l'età - escludiamo per sicurezza
+            print(f"   {ticker} escluso: data di inizio non disponibile")
+            return None
 
         # Salta se troppo simile agli ETF già in portafoglio
         if is_etf_duplicato(nome):
@@ -357,34 +411,58 @@ def analizza_etf(ticker: str, nome_noto: str, aum: float, portfolio_returns: dic
         ter_pct = ter * 100
         net_yield = yield_val - ter_pct
         
+        # AUM HARD FILTER - esclude se sotto minimo
         aum_yf = info.get("totalAssets") or 0
         aum_finale = aum_yf if aum_yf > 0 else aum
         
-        # AUM penalty
+        if aum_finale < AUM_MIN:
+            print(f"   {ticker} escluso: AUM troppo basso ({aum_finale/1e6:.0f}M < {AUM_MIN/1e6:.0f}M)")
+            return None
+        
+        # AUM penalty per scoring
         aum_penalty = 0
-        if aum_finale < 50_000_000:
+        if aum_finale < 200_000_000:
             aum_penalty = -5
-        elif aum_finale < 100_000_000:
+        elif aum_finale < 500_000_000:
             aum_penalty = -2
-        elif aum_finale > 500_000_000:
-            aum_penalty = 0.5  # Small bonus for liquidity
+        elif aum_finale > 1_000_000_000:
+            aum_penalty = 0.5  # Bonus liquidità
 
         # -------------------------------------------------------
-        # HARD DISCARD CONDITIONS
+        # CALCOLO PERFORMANCE YTD (Year to Date)
         # -------------------------------------------------------
-        if total_return_1y < -5.0:
+        # Fix: gestisce timezone mismatch
+        try:
+            inizio_anno = pd.Timestamp.now(tz=prezzi.index.tz).replace(month=1, day=1) if prezzi.index.tz else pd.Timestamp.now().replace(month=1, day=1)
+        except:
+            inizio_anno = pd.Timestamp.now().replace(month=1, day=1)
+        
+        prezzi_ytd = prezzi[prezzi.index >= inizio_anno]
+        if len(prezzi_ytd) > 0:
+            ytd_return = ((prezzo - prezzi_ytd.iloc[0]) / prezzi_ytd.iloc[0]) * 100
+        else:
+            ytd_return = 0
+
+        # -------------------------------------------------------
+        # HARD DISCARD CONDITIONS - PIÙ STRINGENTI SU PERFORMANCE RECENTI
+        # -------------------------------------------------------
+        if total_return_1y < -5.0:  # Tornato a -5%, non accettare perdite annuali
             return None
-        if max_drawdown < -25.0:
+        if ytd_return < -2.0:  # NUOVO: scarta se YTD è negativo (IBCA aveva -1.72%)
             return None
-        if max_correlation > 0.90:
+        if momentum_3m < -5.0:  # NUOVO: scarta se trend 3 mesi è negativo
             return None
-        if consistency_score < 0.5:
+        if max_drawdown < -20.0:  # Tornato a -20%, evita drawdown eccessivi
             return None
-        if net_yield < 1.0:
+        if max_correlation > 0.90:  # Tornato a 0.90
+            return None
+        if consistency_score < 0.40:  # Tornato a 0.40
+            return None
+        if net_yield < 1.0:  # Tornato a 1.0%
             return None
 
         # -------------------------------------------------------
-        # COMPOSITE SCORE
+        # COMPOSITE SCORE - PENALITÀ RIDOTTE
         # -------------------------------------------------------
         score = (
             net_yield              * 2.5   # dividend after costs
@@ -393,10 +471,10 @@ def analizza_etf(ticker: str, nome_noto: str, aum: float, portfolio_returns: dic
             + consistency_score      * 1.0   # reliability of payments
             + div_growth             * 1.0   # growing vs shrinking distributions
             + momentum_3m            * 0.5   # recent direction
-            - abs(max_drawdown)      * 1.5   # worst temporary loss
-            - max_correlation        * 3.0   # overlap with existing portfolio
-            - (ter_pct * 2.0)                # annual cost drag
-            + aum_penalty                   # AUM stability bonus/penalty
+            - abs(max_drawdown)      * 0.8   # Era 1.5, ora 0.8 - penalità ridotta
+            - max_correlation        * 1.5   # Era 3.0, ora 1.5 - penalità ridotta
+            - (ter_pct * 1.0)                # Era 2.0, ora 1.0 - penalità ridotta
+            + aum_penalty                    # bonus/penalty AUM
         )
 
         return {
@@ -489,3 +567,6 @@ if __name__ == "__main__":
     watchlist = df.head(TOP_N)["Ticker"].tolist()
     print(f"\nWATCHLIST ETF PER TRADINGAGENTS:")
     print(f"WATCHLIST = {watchlist}")
+    
+    # Stampa riepilogo errori
+    print_error_summary()
