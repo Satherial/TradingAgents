@@ -302,7 +302,7 @@ class TestConfigConstants:
         assert scanner.ETF_YIELD_MIN == 1.0  # Minimo 1% yield
         assert scanner.ETF_YIELD_MAX == 20.0
         assert scanner.AUM_MIN == 100_000_000  # 100M minimo
-        assert scanner.MIN_AGE_MONTHS == 60  # Minimo 5 anni (60 mesi)
+        assert scanner.MIN_AGE_MONTHS == 36  # Minimo 3 anni (36 mesi)
         assert scanner.TOP_N == 25
     
     def test_portfolio_constants(self):

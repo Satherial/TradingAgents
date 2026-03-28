@@ -14,7 +14,7 @@ warnings.filterwarnings('ignore')
 ETF_YIELD_MIN       = 1.0    # % minimo yield
 ETF_YIELD_MAX       = 20.0   # % massimo
 AUM_MIN             = 100_000_000    # 100M€ AUM minimo (aumentato)
-MIN_AGE_MONTHS      = 60     # Minimo 5 anni di track record (60 mesi)
+MIN_AGE_MONTHS      = 36     # Minimo 3 anni di track record (36 mesi)
 TOP_N               = 25     # Aumentato da 15 a 25 per più opzioni
 
 # -------------------------------------------------------
@@ -59,6 +59,119 @@ TARGET_ISINS = {
 
 # Traccia ISIN trovati durante lo scan
 found_target_isins = set()
+
+# -------------------------------------------------------
+# ISIN TO YAHOO TICKER MAPPING - Per ETF target specifici
+# Mappa ISIN ai ticker Yahoo Finance corretti
+# -------------------------------------------------------
+ISIN_TO_YAHOO_TICKER = {
+    # iShares J.P. Morgan USD EM Bond EUR Hedged UCITS ETF (Dist)
+    "IE00B9M6RS56": "IUSH.DE",  # J.P. Morgan USD EM Bond EUR Hedged
+    # iShares Core MSCI World UCITS ETF EUR Hedged (Dist)
+    "IE00BKBF6H24": "IWDA.DE",  # Core MSCI World EUR Hedged
+    # Amundi Core S&P 500 Swap UCITS ETF EUR Hedged Dist
+    "LU0959211243": "LYP2.DE",  # Amundi Core S&P 500 Swap EUR Hedged
+    # iShares $ Treasury Bond 7-10yr UCITS ETF EUR Hedged (Dist)
+    "IE00BGPP6697": "ID7E.DE",  # $ Treasury Bond 7-10yr EUR Hedged
+    # iShares USD Corporate Bond ESG SRI UCITS ETF EUR Hedged (Dist)
+    "IE00BH4G7D40": "IBHE.DE",  # USD Corporate Bond ESG SRI EUR Hedged
+    # iShares Global Corporate Bond EUR Hedged UCITS ETF (Dist)
+    "IE00B9M6SJ31": "IUSB.DE",  # Global Corporate Bond EUR Hedged
+    # iShares USD Treasury Bond 3-7yr UCITS ETF EUR Hedged (Dist)
+    "IE00BGPP6473": "ID3E.DE",  # USD Treasury Bond 3-7yr EUR Hedged
+    # Xtrackers II US Treasuries UCITS ETF 2D - EUR Hedged
+    "LU1399300455": "DBXN.DE",  # Xtrackers II US Treasuries EUR Hedged
+    # iShares USD Treasury Bond 20+yr UCITS ETF EUR Hedged (Dist)
+    "IE00BD8PGZ49": "ID20.DE",  # USD Treasury Bond 20+yr EUR Hedged
+    # PIMCO US Short-Term High Yield Corp Bond EUR Hedged
+    "IE00BF8HV600": "PM9I.DE",  # PIMCO US Short-Term HY EUR Hedged
+    # Invesco US Treasury Bond 7-10 Year UCITS ETF EUR Hedged Dist
+    "IE00BF2FN869": "TRDX.DE",  # Invesco US Treasury 7-10yr EUR Hedged
+    # Amundi MSCI World Swap II UCITS ETF EUR Hedged Dist
+    "FR0011660927": "DJAB.DE",  # Amundi MSCI World Swap II EUR Hedged
+    # State Street SPDR Bloomberg Global Aggregate Bond EUR Hedged
+    "IE00BF1QPL78": "SPFU.DE",  # SPDR Bloomberg Global Agg Bond EUR Hedged
+    # Invesco AT1 Capital Bond UCITS ETF EUR Hedged Dist
+    "IE00BFZPF439": "XAT1.DE",  # Invesco AT1 Capital Bond EUR Hedged
+    # iShares Global High Yield Corporate Bond EUR Hedged
+    "IE00BJSFR200": "IBC9.DE",  # Global High Yield Corp Bond EUR Hedged
+    # iShares USD High Yield Corporate Bond EUR Hedged
+    "IE00BF3N7102": "IBC2.DE",  # USD High Yield Corp Bond EUR Hedged
+    # iShares Global Government Bond EUR Hedged
+    "IE00BKT6FT27": "AYEK.DE",  # Global Government Bond EUR Hedged
+    # Amundi Index US Corporate SRI EUR Hedged
+    "LU2297533809": "UCRH.DE",  # Amundi US Corporate SRI EUR Hedged
+    # WisdomTree AT1 CoCo Bond EUR Hedged
+    "IE00BFNNN236": "WTEB.DE",  # WisdomTree AT1 CoCo Bond EUR Hedged
+    # iShares MSCI World SRI EUR Hedged
+    "IE00BMZ17W23": "3SUR.DE",  # MSCI World SRI EUR Hedged
+    # iShares USD Corporate Bond EUR Hedged
+    "IE00BF3N6Y61": "36BE.DE",  # USD Corporate Bond EUR Hedged
+    # Xtrackers USD Corporate Bond EUR Hedged
+    "IE00BZ036J45": "XDGU.DE",  # Xtrackers USD Corp Bond EUR Hedged
+    # Xtrackers Nikkei 225 EUR Hedged
+    "LU1875395870": "XDJE.DE",  # Xtrackers Nikkei 225 EUR Hedged
+    # UBS MSCI USA Socially Responsible EUR Hedged
+    "LU1280303014": "4UBK.DE",  # UBS MSCI USA SRI EUR Hedged
+    # iShares MSCI USA SRI EUR Hedged
+    "IE00BZ173V67": "3SUS.DE",  # MSCI USA SRI EUR Hedged
+    # UBS Core MSCI USA EUR Hedged
+    "IE00BD4TYF66": "BCF1.DE",  # UBS Core MSCI USA EUR Hedged
+    # iShares Global Corporate Bond EUR Hedged (duplicate)
+    "IE00BJSFQW37": "36BA.DE",  # Global Corporate Bond EUR Hedged
+    # Xtrackers II Global Inflation-Linked Bond EUR Hedged
+    "IE00BG47KB92": "XZEG.DE",  # Global Inflation-Linked Bond EUR Hedged
+    # Xtrackers ESG USD Emerging Markets Bond EUR Hedged
+    "LU0962078753": "XUEM.DE",  # ESG USD EM Bond EUR Hedged
+    # Vanguard Global Aggregate Bond EUR Hedged
+    "IE00BD4DXB77": "VAGE.DE",  # Vanguard Global Agg Bond EUR Hedged
+    # iShares S&P 500 Health Care Sector EUR Hedged
+    "IE00BMBKBZ46": "IUPH.DE",  # S&P 500 Health Care EUR Hedged
+    # Xtrackers Global Government Bond EUR Hedged
+    "LU0690964092": "XBAG.DE",  # Global Government Bond EUR Hedged
+    # Amundi Global Government Inflation-Linked Bond EUR Hedged
+    "LU1910940268": "GOVG.DE",  # Amundi Global Govt ILB EUR Hedged
+}
+
+# Nomi ETF per lookup
+ISIN_TO_NAME = {
+    "IE00B9M6RS56": "iShares J.P. Morgan USD EM Bond EUR Hedged",
+    "IE00BKBF6H24": "iShares Core MSCI World EUR Hedged",
+    "LU0959211243": "Amundi Core S&P 500 Swap EUR Hedged",
+    "IE00BGPP6697": "iShares $ Treasury Bond 7-10yr EUR Hedged",
+    "IE00BH4G7D40": "iShares USD Corporate Bond ESG SRI EUR Hedged",
+    "IE00B9M6SJ31": "iShares Global Corporate Bond EUR Hedged",
+    "IE00BGPP6473": "iShares USD Treasury Bond 3-7yr EUR Hedged",
+    "LU1399300455": "Xtrackers II US Treasuries EUR Hedged",
+    "IE00BD8PGZ49": "iShares USD Treasury Bond 20+yr EUR Hedged",
+    "IE00BF8HV600": "PIMCO US Short-Term High Yield Corp Bond EUR Hedged",
+    "IE00BF2FN869": "Invesco US Treasury Bond 7-10 Year EUR Hedged",
+    "FR0011660927": "Amundi MSCI World Swap II EUR Hedged",
+    "IE00BF1QPL78": "State Street SPDR Bloomberg Global Aggregate Bond EUR Hedged",
+    "IE00BFZPF439": "Invesco AT1 Capital Bond EUR Hedged",
+    "IE00BJSFR200": "iShares Global High Yield Corporate Bond EUR Hedged",
+    "IE00BF3N7102": "iShares USD High Yield Corporate Bond EUR Hedged",
+    "IE00BKT6FT27": "iShares Global Government Bond EUR Hedged",
+    "LU2297533809": "Amundi Index US Corporate SRI EUR Hedged",
+    "IE00BFNNN236": "WisdomTree AT1 CoCo Bond EUR Hedged",
+    "IE00BMZ17W23": "iShares MSCI World SRI EUR Hedged",
+    "IE00BF3N6Y61": "iShares USD Corporate Bond EUR Hedged",
+    "IE00BZ036J45": "Xtrackers USD Corporate Bond EUR Hedged",
+    "LU1875395870": "Xtrackers Nikkei 225 EUR Hedged",
+    "LU1280303014": "UBS MSCI USA Socially Responsible EUR Hedged",
+    "IE00BZ173V67": "iShares MSCI USA SRI EUR Hedged",
+    "IE00BD4TYF66": "UBS Core MSCI USA EUR Hedged",
+    "IE00BJSFQW37": "iShares Global Corporate Bond EUR Hedged",
+    "IE00BG47KB92": "Xtrackers II Global Inflation-Linked Bond EUR Hedged",
+    "LU0962078753": "Xtrackers ESG USD Emerging Markets Bond EUR Hedged",
+    "IE00BD4DXB77": "Vanguard Global Aggregate Bond EUR Hedged",
+    "IE00BMBKBZ46": "iShares S&P 500 Health Care Sector EUR Hedged",
+    "LU0690964092": "Xtrackers Global Government Bond EUR Hedged",
+    "LU1910940268": "Amundi Global Government Inflation-Linked Bond EUR Hedged",
+}
+
+# Mappatura inversa: ticker Yahoo → ISIN (per quando Yahoo non restituisce ISIN)
+YAHOO_TICKER_TO_ISIN = {v: k for k, v in ISIN_TO_YAHOO_TICKER.items()}
 
 # -------------------------------------------------------
 # PORTAFOGLIO ESISTENTE - per calcolo correlazione
@@ -106,10 +219,16 @@ def get_etf_da_justetf() -> list[tuple[str, str, float]]:
             df = df[df["dividends"] == "Distributing"]
         print(f"   Dopo filtro distributing: {len(df)}")
 
-        # Filtro 2: solo quotati su Borsa Italiana
+        # Filtro 2: solo quotati su exchange europei
+        EUROPEAN_EXCHANGES = [
+            "Borsa Italiana", "XETRA", "Euronext", "Deutsche Börse",
+            "BME", "SIX Swiss", "Wiener Börse", "Nasdaq Nordic"
+        ]
         if "exchange" in df.columns:
-            df = df[df["exchange"].astype(str).str.contains("Borsa Italiana", case=False, na=False)]
-        print(f"   Dopo filtro Borsa Italiana: {len(df)}")
+            df = df[df["exchange"].astype(str).str.contains(
+                '|'.join(EUROPEAN_EXCHANGES), case=False, na=False
+            )]
+        print(f"   Dopo filtro exchange europei: {len(df)}")
 
         # Filtro 3: AUM minimo
         aum_col = "size" if "size" in df.columns else None
@@ -342,12 +461,25 @@ def analizza_etf(ticker: str, nome_noto: str, aum: float, portfolio_returns: dic
         # NUOVO: Validazione ISIN e Mercato
         # -------------------------------------------------------
         isin = info.get("isin", "")
+        
+        # Se Yahoo non restituisce ISIN, prova la mappatura inversa
+        if not isin and ticker in YAHOO_TICKER_TO_ISIN:
+            isin = YAHOO_TICKER_TO_ISIN[ticker]
+        
         exchange = info.get("exchange", "")
         currency = info.get("currency", "USD")
         market = "EU" if exchange in ["Borsa Italiana", "XETRA", "Euronext"] else "USA"
         
-        # Verifica se ISIN è nella lista target
+        # Verifica se ISIN è nella lista target (con fallback per ticker mappati)
         is_isin_target = isin.upper() in TARGET_ISINS if isin else False
+        
+        # Se ancora non trovato, verifica se il ticker stesso è nella mappatura
+        if not is_isin_target and ticker in YAHOO_TICKER_TO_ISIN:
+            isin_from_ticker = YAHOO_TICKER_TO_ISIN[ticker]
+            is_isin_target = isin_from_ticker in TARGET_ISINS
+            if is_isin_target:
+                isin = isin_from_ticker  # Aggiorna ISIN per il report
+        
         if is_isin_target:
             global found_target_isins
             found_target_isins.add(isin.upper())
@@ -498,7 +630,7 @@ def analizza_etf(ticker: str, nome_noto: str, aum: float, portfolio_returns: dic
         # -------------------------------------------------------
         if total_return_1y < -5.0:  # Tornato a -5%, non accettare perdite annuali
             return None
-        if ytd_return < -2.0:  # NUOVO: scarta se YTD è negativo (IBCA aveva -1.72%)
+        if ytd_return < -10.0:  # Rilassato: bond treasury possono avere YTD fino a -10%
             return None
         if momentum_3m < -5.0:  # NUOVO: scarta se trend 3 mesi è negativo
             return None
@@ -565,6 +697,37 @@ if __name__ == "__main__":
 
     # Step 1: discovery completa da justETF
     etf_list = get_etf_da_justetf()
+    
+    # Step 1b: Aggiungi ETF target ISIN con ticker Yahoo corretti
+    # Questo assicura che gli ETF EUR Hedged vengano sempre analizzati
+    print(f"\n Aggiungo {len(ISIN_TO_YAHOO_TICKER)} ETF target (EUR Hedged) alla lista...")
+    target_etfs_added = 0
+    for isin, yahoo_ticker in ISIN_TO_YAHOO_TICKER.items():
+        nome = ISIN_TO_NAME.get(isin, f"ETF Target {isin}")
+        # Usa AUM noto da dati justETF (in milioni)
+        aum_mappa = {
+            "IE00B9M6RS56": 2_068, "IE00BKBF6H24": 1_545, "LU0959211243": 1_304,
+            "IE00BGPP6697": 1_282, "IE00BH4G7D40": 1_155, "IE00B9M6SJ31": 1_110,
+            "IE00BGPP6473": 1_090, "LU1399300455": 1_023, "IE00BD8PGZ49": 743,
+            "IE00BF8HV600": 711, "IE00BF2FN869": 678, "FR0011660927": 606,
+            "IE00BF1QPL78": 548, "IE00BFZPF439": 392, "IE00BJSFR200": 362,
+            "IE00BF3N7102": 341, "IE00BKT6FT27": 327, "LU2297533809": 317,
+            "IE00BFNNN236": 285, "IE00BMZ17W23": 249, "IE00BF3N6Y61": 237,
+            "IE00BZ036J45": 224, "LU1875395870": 209, "LU1280303014": 194,
+            "IE00BZ173V67": 193, "IE00BD4TYF66": 175, "IE00BJSFQW37": 130,
+            "IE00BG47KB92": 129, "LU0962078753": 124, "IE00BD4DXB77": 117,
+            "IE00BMBKBZ46": 109, "LU0690964092": 104, "LU1910940268": 104,
+        }
+        aum = aum_mappa.get(isin, 200) * 1_000_000  # Converti in unità base
+        
+        # Verifica se questo ticker è già nella lista
+        existing_tickers = [t[0] for t in etf_list]
+        if yahoo_ticker not in existing_tickers and isin not in [t[0] for t in etf_list]:
+            etf_list.append((yahoo_ticker, nome, aum))
+            target_etfs_added += 1
+    
+    print(f"   Aggiunti {target_etfs_added} ETF target unici")
+    print(f"   Totale ETF da analizzare: {len(etf_list)}\n")
 
     if not etf_list:
         print(" Nessun ETF trovato da justETF.")
