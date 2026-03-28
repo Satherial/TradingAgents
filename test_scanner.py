@@ -169,7 +169,7 @@ class TestETFScanner:
             'dividendYield': 0.03,
             'annualReportExpenseRatio': 0.001,
             'totalAssets': 1000000000,
-            'fundInceptionDate': '2020-01-01'  # ETF con più di 2 anni di storia
+            'fundInceptionDate': '2018-01-01'  # ETF con più di 5 anni di storia (60 mesi)
         }
         
         # Mock storico prezzi con almeno 50 giorni di dati
@@ -302,7 +302,7 @@ class TestConfigConstants:
         assert scanner.ETF_YIELD_MIN == 1.0  # Minimo 1% yield
         assert scanner.ETF_YIELD_MAX == 20.0
         assert scanner.AUM_MIN == 100_000_000  # 100M minimo
-        assert scanner.MIN_AGE_MONTHS == 24  # Minimo 2 anni
+        assert scanner.MIN_AGE_MONTHS == 60  # Minimo 5 anni (60 mesi)
         assert scanner.TOP_N == 25
     
     def test_portfolio_constants(self):

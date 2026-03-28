@@ -14,8 +14,51 @@ warnings.filterwarnings('ignore')
 ETF_YIELD_MIN       = 1.0    # % minimo yield
 ETF_YIELD_MAX       = 20.0   # % massimo
 AUM_MIN             = 100_000_000    # 100M€ AUM minimo (aumentato)
-MIN_AGE_MONTHS      = 24     # Minimo 2 anni di track record
+MIN_AGE_MONTHS      = 60     # Minimo 5 anni di track record (60 mesi)
 TOP_N               = 25     # Aumentato da 15 a 25 per più opzioni
+
+# -------------------------------------------------------
+# ISIN TARGET - ETF EUR Hedged Distributing preferiti (per verifica)
+# Questi sono i benchmark che lo scanner dovrebbe trovare
+# -------------------------------------------------------
+TARGET_ISINS = {
+    "IE00B9M6RS56",  # iShares J.P. Morgan USD EM Bond EUR Hedged
+    "IE00BKBF6H24",  # iShares Core MSCI World EUR Hedged
+    "LU0959211243",  # Amundi Core S&P 500 Swap EUR Hedged
+    "IE00BGPP6697",  # iShares $ Treasury Bond 7-10yr EUR Hedged
+    "IE00BH4G7D40",  # iShares USD Corporate Bond ESG SRI EUR Hedged
+    "IE00B9M6SJ31",  # iShares Global Corporate Bond EUR Hedged
+    "IE00BGPP6473",  # iShares USD Treasury Bond 3-7yr EUR Hedged
+    "LU1399300455",  # Xtrackers II US Treasuries EUR Hedged
+    "IE00BD8PGZ49",  # iShares USD Treasury Bond 20+yr EUR Hedged
+    "IE00BF8HV600",  # PIMCO US Short-Term High Yield Corp Bond EUR Hedged
+    "IE00BF2FN869",  # Invesco US Treasury Bond 7-10 Year EUR Hedged
+    "FR0011660927",  # Amundi MSCI World Swap II EUR Hedged
+    "IE00BF1QPL78",  # State Street SPDR Bloomberg Global Aggregate Bond EUR Hedged
+    "IE00BFZPF439",  # Invesco AT1 Capital Bond EUR Hedged
+    "IE00BJSFR200",  # iShares Global High Yield Corporate Bond EUR Hedged
+    "IE00BF3N7102",  # iShares USD High Yield Corporate Bond EUR Hedged
+    "IE00BKT6FT27",  # iShares Global Government Bond EUR Hedged
+    "LU2297533809",  # Amundi Index US Corporate SRI EUR Hedged
+    "IE00BFNNN236",  # WisdomTree AT1 CoCo Bond EUR Hedged
+    "IE00BMZ17W23",  # iShares MSCI World SRI EUR Hedged
+    "IE00BF3N6Y61",  # iShares USD Corporate Bond EUR Hedged
+    "IE00BZ036J45",  # Xtrackers USD Corporate Bond EUR Hedged
+    "LU1875395870",  # Xtrackers Nikkei 225 EUR Hedged
+    "LU1280303014",  # UBS MSCI USA Socially Responsible EUR Hedged
+    "IE00BZ173V67",  # iShares MSCI USA SRI EUR Hedged
+    "IE00BD4TYF66",  # UBS Core MSCI USA EUR Hedged
+    "IE00BJSFQW37",  # iShares Global Corporate Bond EUR Hedged
+    "IE00BG47KB92",  # Xtrackers II Global Inflation-Linked Bond EUR Hedged
+    "LU0962078753",  # Xtrackers ESG USD Emerging Markets Bond EUR Hedged
+    "IE00BD4DXB77",  # Vanguard Global Aggregate Bond EUR Hedged
+    "IE00BMBKBZ46",  # iShares S&P 500 Health Care Sector EUR Hedged
+    "LU0690964092",  # Xtrackers Global Government Bond EUR Hedged
+    "LU1910940268",  # Amundi Global Government Inflation-Linked Bond EUR Hedged
+}
+
+# Traccia ISIN trovati durante lo scan
+found_target_isins = set()
 
 # -------------------------------------------------------
 # PORTAFOGLIO ESISTENTE - per calcolo correlazione
@@ -303,6 +346,13 @@ def analizza_etf(ticker: str, nome_noto: str, aum: float, portfolio_returns: dic
         currency = info.get("currency", "USD")
         market = "EU" if exchange in ["Borsa Italiana", "XETRA", "Euronext"] else "USA"
         
+        # Verifica se ISIN è nella lista target
+        is_isin_target = isin.upper() in TARGET_ISINS if isin else False
+        if is_isin_target:
+            global found_target_isins
+            found_target_isins.add(isin.upper())
+            print(f"   {ticker} ISIN TARGET trovato: {isin}")
+        
         # Avvisa se ETF è molto recente - HARD FILTER
         inception_date = info.get("fundInceptionDate")
         if inception_date:
@@ -570,3 +620,19 @@ if __name__ == "__main__":
     
     # Stampa riepilogo errori
     print_error_summary()
+    
+    # Report ISIN target
+    print(f"\n{'='*65}")
+    print(f"VERIFICA ISIN TARGET: {len(found_target_isins)}/{len(TARGET_ISINS)} trovati")
+    print(f"{'='*65}")
+    
+    if found_target_isins:
+        print("\nISIN target trovati:")
+        for isin in sorted(found_target_isins):
+            print(f"  {isin}")
+    
+    missing_isins = TARGET_ISINS - found_target_isins
+    if missing_isins:
+        print(f"\nISIN target mancanti ({len(missing_isins)}):")
+        for isin in sorted(missing_isins):
+            print(f"  {isin}")
