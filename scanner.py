@@ -110,28 +110,8 @@ def get_etf_da_justetf() -> list[tuple[str, str, float]]:
 
 
 def get_etf_fallback() -> list[tuple[str, str, float]]:
-    """Lista minima di fallback con ticker verificati se justETF non risponde."""
-    return [
-        # ETF preferiti dell'utente (EUR Hedged, Distributing, grande AUM)
-        ("IUSH", "iShares J.P. Morgan USD EM Bond EUR Hedged", 2_068_000_000),
-        ("IWDA", "iShares Core MSCI World EUR Hedged", 1_545_000_000),
-        ("LYP2", "Amundi Core S&P 500 Swap EUR Hedged", 1_304_000_000),
-        ("ID7E", "iShares $ Treasury Bond 7-10yr EUR Hedged", 1_282_000_000),
-        ("IBHE", "iShares USD Corporate Bond ESG SRI EUR Hedged", 1_155_000_000),
-        ("IUSB", "iShares Global Corporate Bond EUR Hedged", 1_110_000_000),
-        ("ID3E", "iShares USD Treasury Bond 3-7yr EUR Hedged", 1_090_000_000),
-        ("DBXN", "Xtrackers II US Treasuries EUR Hedged", 1_023_000_000),
-        ("ID20", "iShares USD Treasury Bond 20+yr EUR Hedged", 743_000_000),
-        ("WTEI", "WisdomTree AT1 CoCo Bond EUR Hedged", 285_000_000),
-        ("DX2G", "Xtrackers Nikkei 225 EUR Hedged", 209_000_000),
-        # ETF originali
-        ("VUSA", "Vanguard All-World High Div", 11_000_000_000),
-        ("VWRA", "Vanguard All-World Dist", 5_000_000_000),
-        ("SX5E", "iShares Euro Stoxx 50", 5_000_000_000),
-        ("DLVP", "VanEck Dividend Leaders", 2_000_000_000),
-        ("CS51", "iShares Core Euro Stoxx 50", 8_000_000_000),
-        ("IDVY", "iShares STOXX Global Select Div", 2_000_000_000),
-    ]
+    """Fallback vuoto - lo scanner deve scoprire ETF dinamicamente dalle API."""
+    return []
 
 
 # -------------------------------------------------------
