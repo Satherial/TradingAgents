@@ -18,6 +18,19 @@ MIN_AGE_MONTHS      = 36     # Minimo 3 anni di track record
 TOP_N               = 25     # Top N ETF da restituire
 
 # -------------------------------------------------------
+# EXCHANGE ACCESSIBILI DALL'ITALIA
+# Solo questi exchange sono facilmente accessibili da broker italiani
+# -------------------------------------------------------
+EXCHANGE_AMMESSI = [
+    "Borsa Italiana",  # Milano - accesso diretto
+    "XETRA",           # Deutsche Börse - accesso via broker italiani
+    "Euronext",        # Parigi/Amsterdam - accesso via broker italiani
+]
+
+# Ticker suffix per exchange italiani/europei facilmente accessibili
+TICKER_SUFFIX_AMMESSI = ['.MI', '.DE', '.PA', '.AS', '.NA']  # Italia, Germania, Francia, Amsterdam, Nasdaq Nordic
+
+# -------------------------------------------------------
 # PORTAFOGLIO ESISTENTE - per calcolo correlazione
 # -------------------------------------------------------
 PORTFOLIO_ETFS = {
@@ -63,16 +76,15 @@ def get_etf_da_justetf() -> list[tuple[str, str, float]]:
             df = df[df["dividends"] == "Distributing"]
         print(f"   Dopo filtro distributing: {len(df)}")
 
-        # Filtro 2: solo quotati su exchange europei
-        EUROPEAN_EXCHANGES = [
-            "Borsa Italiana", "XETRA", "Euronext", "Deutsche Börse",
-            "BME", "SIX Swiss", "Wiener Börse", "Nasdaq Nordic"
-        ]
+        # Filtro 2: Exchange europei accessibili da Italia
         if "exchange" in df.columns:
             df = df[df["exchange"].astype(str).str.contains(
-                '|'.join(EUROPEAN_EXCHANGES), case=False, na=False
+                'Borsa Italiana|XETRA|Euronext|Deutsche Börse|SIX Swiss|BME|Wiener Börse',
+                case=False, na=False
             )]
-        print(f"   Dopo filtro exchange europei: {len(df)}")
+            print(f"   Dopo filtro exchange europei: {len(df)}")
+        else:
+            print("   ⚠️  Colonna exchange non trovata, nessun filtro applicato")
 
         # Filtro 3: AUM minimo
         aum_col = "size" if "size" in df.columns else None
@@ -297,7 +309,7 @@ def analizza_etf(ticker: str, nome_noto: str, aum: float, portfolio_returns: dic
         inception_date = info.get("fundInceptionDate")
         if inception_date:
             try:
-                inception = pd.to_datetime(inception_date)
+                inception = pd.to_datetime(inception_date, unit='s', utc=True)
                 months_old = (pd.Timestamp.now(tz="UTC") - inception).days / 30
                 if months_old < MIN_AGE_MONTHS:  # HARD FILTER: minimo 2 anni
                     print(f"   {ticker} escluso: ETF troppo recente ({months_old:.0f} mesi < {MIN_AGE_MONTHS})")
@@ -539,6 +551,12 @@ if __name__ == "__main__":
 
     if not risultati:
         print("\nNessun ETF ha superato i filtri.")
+        # Crea CSV vuoto con intestazioni per evitare errore in main.py
+        empty_df = pd.DataFrame(columns=["Ticker","Nome","ISIN","Exchange","Currency","Prezzo €","Yield %","Net Yield %","Total Return 1y %",
+            "Sharpe","Max Drawdown %","Momentum 3m %","Consistency","Div Growth %",
+            "Max Correlation","AUM","TER %","Score"])
+        empty_df.to_csv("scan_etf_risultati.csv", encoding="utf-8-sig", index=True)
+        print(f"   Creato file vuoto: scan_etf_risultati.csv")
         exit()
 
     df = (pd.DataFrame(risultati)
